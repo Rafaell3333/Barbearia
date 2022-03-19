@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { FormGroup, FormBuilder, Form } from '@angular/forms';
+import { FormGroup, FormBuilder, Form, Validators } from '@angular/forms';
+import {MatSnackBar} from '@angular/material/snack-bar';
 
 interface Cliente{
   id: number,
@@ -28,15 +29,24 @@ export class AppComponent {
   fila: Cliente[] = [];
   servicos: typeof Servico = Servico;
 
-  constructor(public fb: FormBuilder, public http: HttpClient){
+  constructor(public fb: FormBuilder, public http: HttpClient, private snackBar: MatSnackBar){
     this.form = this.fb.group({
       data: [new Date().toLocaleDateString()],
-      cliente: [''],
-      contato: [''],
-      servico: [''],
+      cliente: ['',Validators.required],
+      contato: ['',Validators.required],
+      servico: ['',Validators.required],
     });
     this.pegarDados();
   }
+
+ngOnInit(){
+  setInterval(
+() => {
+this.pegarDados();
+}
+,1000
+  );
+}
 
   verificarSenha(event: any){
     this.logado = event.target.value == '123';
@@ -46,10 +56,21 @@ export class AppComponent {
     console.log(this.form.value);
     this.http.post<any>(this.url, this.form.value).subscribe(
       (data: any) => {
-        console.log(data);
+       this.snackBar.open(data,'',{
+         horizontalPosition: 'right',
+         verticalPosition:'top',
+         duration:3000
+       });
+        this.pegarDados();
+        this.form.reset();
       },
       (error: any) => {
-        console.log(error.error);
+        this.snackBar.open(error.error,'',{
+          horizontalPosition: 'right',
+          verticalPosition:'top',
+          duration:3000,
+          panelClass: ['red-snackbar'],
+      });
       }
     );
   }
@@ -66,7 +87,7 @@ export class AppComponent {
   removerDaFila(id:number){
     this.http.patch<any>(this.url, {id}).subscribe(
       (resposta: any) => {
-        console.log("Finalizado com sucesso")
+        this.pegarDados();
       }
     );
   }
